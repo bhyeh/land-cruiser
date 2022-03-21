@@ -7,13 +7,18 @@ import numpy as np
 import pandas as pd
 
 
-class Parser():
+class BATParser():
     """ A parser for 60 Series Toyota Land Cruiser listings on BringATrailer.com (BAT)
+    
+    Methods
+    -------
+    parse(page_source)
+        Parses and retrieves auction and vehicle information from a listing page
     
     """
     
     def __init__(self):
-        """
+        """ Do nothing
         """
         
     def parse_auction(self, auction_details, auction_stats, auction_essentials):
@@ -23,7 +28,7 @@ class Parser():
 
         Parameters
         ----------
-            TODO
+        auction_details, auction_stats, auction_essentials: bs4.element.Tag
 
         Returns
         -------
@@ -44,13 +49,14 @@ class Parser():
         
         return price, sell_date, seller_location, no_comments, no_views, no_watchers, no_bids
     
+    
     def parse_title(self, listing_title):
-        """ Parses listing title and returns tuple containing year and body code
+        """ Parses listing title and returns the year and body code
 
         Parameters
         ----------
         listing_title: str
-            listing title that has approximate form: '19xx Toyota Land Cruiser yJ6y'
+            listing title that has follows approximate form: '19xx Toyota Land Cruiser yJ6y'
 
         Returns
         -------
@@ -73,6 +79,7 @@ class Parser():
         code = listing_title[code_idx:code_idx+4]
         return year, code
 
+    
     def parse_vehicle(self, listing_details):
         """ Parses 'Listing Details' section of listing page
 
@@ -99,7 +106,7 @@ class Parser():
                 (E.g., interior description is always after exterior description, transfer is after transmission, etc.)
 
             (2) 'Interior Description' typically indicates end of core listing items, and any remaining
-                items that follow are misc. (have even more unpredictable structure, but may off interesting insight later)
+                items that follow are misc. (have even more unpredictable structure, but may offer interesting insight later)
 
         Returns
         -------
@@ -116,8 +123,7 @@ class Parser():
         mileage_keywords = ['miles', 'shown']
         engine_keywords = ['-liter', 'inline', 'v6', 'v8', 'diesel', 'straight']
         transmission_keywords = ['manual', 'automatic', 'transmis', 'gear', 'box'] # transmission is sometimes misspelled, with ony one 's'
-        paint_keywords = ['paint', 'exterior', 'metallic', 'finished', 'refinished', 'tone', 'wrap', 'over'
-                          'blue', 'biege', 'white', 'brown', 'copper', 'gray', 'red']
+        paint_keywords = ['paint', 'exterior', 'metallic', 'finished', 'refinished', 'tone', 'wrap', 'over']
         # redundant 'finsihed' vs 'refinished'; 
         # use word stem 'finish'
         interior_keywords = ['cloth', 'vinyl', 'upholstery', 'interior']
@@ -144,16 +150,17 @@ class Parser():
         misc = listing_details[j+1:]
         return miles, engine, trans, paint, interior, misc
     
+    
     def parse(self, page_source):
-        """ TODO
+        """ Parses and retrieves auction and vehicle information from a listing page
         
         Parameters
         ----------
-            TODO
+        page_source: str
             
         Returns
         -------
-            TODO
+        list of str
             
         """
         
@@ -174,6 +181,8 @@ class Parser():
         listing_specs = [spec.text for spec in listing_details.find('ul').find_all('li')]
         miles, engine, trans, exterior_paint, interior, misc = self.parse_vehicle(listing_specs)
         
-        return [listing_title, price, sell_date, no_views, no_watchers, no_comments, no_bids, seller_location, 
-                year, code, miles, engine, trans, exterior_paint, interior, misc]
+        # scraped information
+        scraped_page = [listing_title, price, sell_date, no_views, no_watchers, no_comments, no_bids, 
+                        seller_location, year, code, miles, engine, trans, exterior_paint, interior, misc]
+        return scraped_page
 

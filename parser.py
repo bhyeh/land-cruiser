@@ -125,8 +125,7 @@ class BATParser():
         transmission_keywords = ['manual', 'automatic', 'transmis', 'gear', 'box'] 
         paint_keywords = ['paint', 'exterior', 'metallic', 'finish', 'tone', 'wrap', 'over', 'decal',
                           'light', 'silver', 'white', 'gray', 'beige', 'brown', 'blue', 'red', 'tan']
-        # redundant 'finsihed' vs 'refinished'; 
-        # use word stem 'finish'
+
         interior_keywords = ['cloth', 'vinyl', 'upholstery', 'interior', 'fabric', 'leather']
         # misc. idx; indicates end of 'core' items in description
         j = -1
@@ -142,12 +141,12 @@ class BATParser():
                 else:
                     trans = 'manual'
             elif any(keyword in s for keyword in paint_keywords) & (pd.isna(paint)):
-                no_paint_keywords = sum(keyword in s for keyword in paint_keywords)
-                no_interior_keywords = sum(keyword in s for keyword in interior_keywords)
+                no_paint_keywords = sum([1 for keyword in paint_keywords if keyword in s])
+                no_interior_keywords = sum([1 for keyword in interior_keywords if keyword in s])
                 # catch case where 'over' keyword misparsing paint description
-                if ('over' in s) & (no_paint_keywords == 1):
+                if ('tooth' in s or 'over' in s or 'tone' in s or 'light' in s) & (no_paint_keywords == 1):
                     pass
-                elif (no_paint_keywords > no_interior_keywords):
+                elif (no_paint_keywords >= no_interior_keywords):
                     paint = s
             elif any(keyword in s for keyword in interior_keywords) & (pd.isna(interior)):
                 interior = s
@@ -175,9 +174,8 @@ class BATParser():
         auction_details = soup.find('div', {'class' : 'listing-available-info'})
         auction_stats = soup.find('div', {'id': 'listing-bid-container'})
         auction_essentials = soup.find('div', class_='essentials')
-        price, sell_date, seller_location, no_comments, no_views, no_watchers, no_bids = self.parse_auction(auction_details,
-                                                                                                       auction_stats,
-                                                                                                       auction_essentials)
+        price, sell_date, seller_location, no_comments, no_views, no_watchers, no_bids = self.parse_auction(auction_details,auction_stats, auction_essentials)
+        
         # parse listing title
         listing_title = soup.find('h1', class_='post-title listing-post-title').text
         year, code = self.parse_title(listing_title)

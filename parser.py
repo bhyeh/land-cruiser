@@ -51,7 +51,7 @@ class BATParser():
     
     
     def parse_title(self, listing_title):
-        """ Parses listing title and returns the year and body code
+        """ Parses listing title and returns the year and series code
 
         Parameters
         ----------
@@ -62,8 +62,8 @@ class BATParser():
         -------
         year: str
             year of land cruiser
-        code: str
-            body code indicating face generation (e.g., 'fj60', 'fj62', 'hj61')
+        series: str
+            code indicating series/generation (e.g., 'fj60', 'fj62', 'hj61')
 
         """
 
@@ -122,31 +122,37 @@ class BATParser():
         # keyword occurence to identify details
         mileage_keywords = ['miles', 'shown']
         engine_keywords = ['-liter', 'inline', 'v6', 'v8', 'diesel', 'straight']
-        transmission_keywords = ['manual', 'automatic', 'transmis', 'gear', 'box'] # transmission is sometimes misspelled, with ony one 's'
-        paint_keywords = ['paint', 'exterior', 'metallic', 'finished', 'refinished', 'tone', 'wrap', 'over']
+        transmission_keywords = ['manual', 'automatic', 'transmis', 'gear', 'box'] 
+        paint_keywords = ['paint', 'exterior', 'metallic', 'finish', 'tone', 'wrap', 'over', 'decal',
+                          'light', 'silver', 'white', 'gray', 'beige', 'brown', 'blue', 'red', 'tan']
         # redundant 'finsihed' vs 'refinished'; 
         # use word stem 'finish'
-        interior_keywords = ['cloth', 'vinyl', 'upholstery', 'interior']
+        interior_keywords = ['cloth', 'vinyl', 'upholstery', 'interior', 'fabric', 'leather']
         # misc. idx; indicates end of 'core' items in description
         j = -1
         # enumerate items
         for i, s in enumerate(listing_details):
             if any(keyword in s for keyword in mileage_keywords) & (pd.isna(miles)):
                 miles = s.split(' ')[0]
-            if any(keyword in s for keyword in engine_keywords) & (pd.isna(engine)):
+            elif any(keyword in s for keyword in engine_keywords) & (pd.isna(engine)):
                 engine = s
-            if any(keyword in s for keyword in transmission_keywords) & (pd.isna(trans)):
+            elif any(keyword in s for keyword in transmission_keywords) & (pd.isna(trans)):
                 if 'automatic' in s:
                     trans = 'automatic'
                 else:
                     trans = 'manual'
-            if any(keyword in s for keyword in paint_keywords) & (pd.isna(paint)):
-                paint = s
-            if any(keyword in s for keyword in interior_keywords) & (pd.isna(interior)):
+            elif any(keyword in s for keyword in paint_keywords) & (pd.isna(paint)):
+                no_paint_keywords = sum(keyword in s for keyword in paint_keywords)
+                no_interior_keywords = sum(keyword in s for keyword in interior_keywords)
+                # catch case where 'over' keyword misparsing paint description
+                if ('over' in s) & (no_paint_keywords == 1):
+                    pass
+                elif (no_paint_keywords > no_interior_keywords):
+                    paint = s
+            elif any(keyword in s for keyword in interior_keywords) & (pd.isna(interior)):
                 interior = s
-                # interior description typically indicates the end of the 'core' items; 
-                # everything beyond are misc items to describe the listing
-                j = i 
+                j = i
+
         misc = listing_details[j+1:]
         return miles, engine, trans, paint, interior, misc
     

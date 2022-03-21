@@ -1,0 +1,179 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+
+from bs4 import BeautifulSoup
+import numpy as np
+import pandas as pd
+
+
+class Parser():
+    """ A parser for 60 Series Toyota Land Cruiser listings on BringATrailer.com (BAT)
+    
+    """
+    
+    def __init__(self):
+        """
+        """
+        
+    def parse_auction(self, auction_details, auction_stats, auction_essentials):
+        """ Parses the auction meta details
+
+        Returns auction closing price, selling date, seller location, number of comments, watchers, and bids
+
+        Parameters
+        ----------
+            TODO
+
+        Returns
+        -------
+        price, sell_date, seller_location, no_comments, no_views, no_watchers, no_bids : str
+        """
+
+        # auction details
+        price = auction_details.find('span', {'class' : 'info-value noborder-tiny'}).strong.text.split('$')[-1]
+        sell_date = auction_details.find('span', {'class': 'date'}).text.split(' ')[-1]
+        no_comments = auction_details.find('span', {'class' : 'comments_header_html'}).find('span', {'class' :'info-value'}).text
+
+        # auction stats
+        no_views, no_watchers = tuple([stat.text.split(' ')[0] for stat in auction_stats.find('td', {'class': 'listing-stats-views'}).find_all('span')])
+        no_bids = auction_stats.find('td', {'class': 'listing-stats-value number-bids-value'}).text
+
+        # location
+        seller_location = auction_essentials.find_all('a', href=True)[2].text.lower()
+        
+        return price, sell_date, seller_location, no_comments, no_views, no_watchers, no_bids
+    
+    def parse_title(self, listing_title):
+        """ Parses listing title and returns tuple containing year and body code
+
+        Parameters
+        ----------
+        listing_title: str
+            listing title that has approximate form: '19xx Toyota Land Cruiser yJ6y'
+
+        Returns
+        -------
+        year: str
+            year of land cruiser
+        code: str
+            body code indicating face generation (e.g., 'fj60', 'fj62', 'hj61')
+
+        """
+
+        # initialize both year and body code as null
+        year = code = np.nan
+        # lowercase title
+        listing_title = listing_title.lower()
+        # parse year from title
+        year_idx = listing_title.find('19')
+        year = listing_title[year_idx:year_idx+4]
+        # parse body code
+        code_idx = listing_title.find('j') - 1
+        code = listing_title[code_idx:code_idx+4]
+        return year, code
+
+    def parse_vehicle(self, listing_details):
+        """ Parses 'Listing Details' section of listing page
+
+        Returns the mileage, engine, transmission type, as well as paint scheme, interior, and misc. items
+
+        Parameters
+        ----------
+        listing_details: list of str
+            listing details that follow ~approximate form:
+
+            [   Chassis: **VIN**,
+                xxxK Miles Shown,
+                **Engine Description**,
+                **Transmission Description**,
+                **Transfer Case Description**,
+                **Paint Description**,
+                **Interior Description**,
+                **Misc. Items**
+            ]
+
+            Notes:
+            (1) Descriptions vary tremendously from listing to listing, the exact index occurence of items often change,
+                and items are sometimes not listed. However the overall item structure does not change and is predictable. 
+                (E.g., interior description is always after exterior description, transfer is after transmission, etc.)
+
+            (2) 'Interior Description' typically indicates end of core listing items, and any remaining
+                items that follow are misc. (have even more unpredictable structure, but may off interesting insight later)
+
+        Returns
+        -------
+        miles, engine, trans, paint, interior: str
+        misc: list of str
+
+        """
+        
+        # initialize all details as null
+        miles = engine = trans = paint = interior = np.nan
+        # lower case details
+        listing_details = [spec.lower() for spec in listing_details]
+        # keyword occurence to identify details
+        mileage_keywords = ['miles', 'shown']
+        engine_keywords = ['-liter', 'inline', 'v6', 'v8', 'diesel', 'straight']
+        transmission_keywords = ['manual', 'automatic', 'transmis', 'gear', 'box'] # transmission is sometimes misspelled, with ony one 's'
+        paint_keywords = ['paint', 'exterior', 'metallic', 'finished', 'refinished', 'tone', 'wrap', 'over'
+                          'blue', 'biege', 'white', 'brown', 'copper', 'gray', 'red']
+        # redundant 'finsihed' vs 'refinished'; 
+        # use word stem 'finish'
+        interior_keywords = ['cloth', 'vinyl', 'upholstery', 'interior']
+        # misc. idx; indicates end of 'core' items in description
+        j = -1
+        # enumerate items
+        for i, s in enumerate(listing_details):
+            if any(keyword in s for keyword in mileage_keywords) & (pd.isna(miles)):
+                miles = s.split(' ')[0]
+            if any(keyword in s for keyword in engine_keywords) & (pd.isna(engine)):
+                engine = s
+            if any(keyword in s for keyword in transmission_keywords) & (pd.isna(trans)):
+                if 'automatic' in s:
+                    trans = 'automatic'
+                else:
+                    trans = 'manual'
+            if any(keyword in s for keyword in paint_keywords) & (pd.isna(paint)):
+                paint = s
+            if any(keyword in s for keyword in interior_keywords) & (pd.isna(interior)):
+                interior = s
+                # interior description typically indicates the end of the 'core' items; 
+                # everything beyond are misc items to describe the listing
+                j = i 
+        misc = listing_details[j+1:]
+        return miles, engine, trans, paint, interior, misc
+    
+    def parse(self, page_source):
+        """ TODO
+        
+        Parameters
+        ----------
+            TODO
+            
+        Returns
+        -------
+            TODO
+            
+        """
+        
+        soup = BeautifulSoup(page_source, 'lxml')
+        # parse auction meta details
+        auction_details = soup.find('div', {'class' : 'listing-available-info'})
+        auction_stats = soup.find('div', {'id': 'listing-bid-container'})
+        auction_essentials = soup.find('div', class_='essentials')
+        price, sell_date, seller_location, no_comments, no_views, no_watchers, no_bids = self.parse_auction(auction_details,
+                                                                                                       auction_stats,
+                                                                                                       auction_essentials)
+        # parse listing title
+        listing_title = soup.find('h1', class_='post-title listing-post-title').text
+        year, code = self.parse_title(listing_title)
+        
+        # parse listing details
+        listing_details = soup.find('div', class_='essentials')
+        listing_specs = [spec.text for spec in listing_details.find('ul').find_all('li')]
+        miles, engine, trans, exterior_paint, interior, misc = self.parse_vehicle(listing_specs)
+        
+        return [listing_title, price, sell_date, no_views, no_watchers, no_comments, no_bids, seller_location, 
+                year, code, miles, engine, trans, exterior_paint, interior, misc]
+

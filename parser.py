@@ -16,11 +16,7 @@ class BATParser():
         Parses and retrieves auction and vehicle information from a listing page
     
     """
-    
-    def __init__(self):
-        """ Do nothing
-        """
-        
+
     def parse_auction(self, auction_details, auction_stats, auction_essentials):
         """ Parses the auction meta details
 

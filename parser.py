@@ -144,7 +144,7 @@ class BATParser():
                 no_paint_keywords = sum([1 for keyword in paint_keywords if keyword in s])
                 no_interior_keywords = sum([1 for keyword in interior_keywords if keyword in s])
                 # catch case where 'over' keyword misparsing paint description
-                if ('tooth' in s or 'over' in s or 'tone' in s or 'light' in s) & (no_paint_keywords == 1):
+                if ('tank' in s or 'tooth' in s or 'over' in s or 'tone' in s or 'light' in s) & (no_paint_keywords == 1):
                     pass
                 elif (no_paint_keywords >= no_interior_keywords):
                     paint = s

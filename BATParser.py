@@ -75,6 +75,55 @@ class Parser():
         code = listing_title[code_idx:code_idx+4]
         return year, code
 
+    def parse_mileage(self, string):
+        """ Parses indicated mileage
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        
+        """
+
+        split = string.split(' ')
+        split = [substring.strip(' ()~,') for substring in split]
+        string = ' '.join(split)
+        # Format 1: 'xxx.xxx miles shown'
+        if 'miles shown' in string:
+            miles = string.split(' miles shown')[0].split(' ')[-1]
+        # Format 2: 'xxx.xxx indicated miles' 
+        elif 'indicated miles' in string:
+            miles = string.split(' indicated miles')[0].split(' ')[-1]
+        # Format 3: 'xxx.xxxx miles'
+        elif 'miles' in string:
+            miles = string.split(' miles')[0].split(' ')[-1]
+        # Format 4: 'xxx.xxx shown'
+        elif 'shown' in string:
+            miles = string.split(' shown')[0].split(' ')[-1]
+        else:
+            miles = np.nan
+        return miles
+
+    def parse_transmission(self, string):
+        """ Parses indicated transmission
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        
+        """
+
+        if 'automatic' in string:
+            trans = 'automatic'
+        elif 'manual' in string:
+            trans = 'manual'
+        else:
+            trans = np.nan
+        return trans
+
     
     def parse_vehicle(self, listing_details):
         """ Parses 'Listing Details' section of listing page
@@ -87,7 +136,7 @@ class Parser():
             listing details that follow ~approximate form:
 
             [   Chassis: **VIN**,
-                xxxK Miles Shown,
+                **Miles Description**,
                 **Engine Description**,
                 **Transmission Description**,
                 **Transfer Case Description**,
@@ -98,7 +147,7 @@ class Parser():
 
             Notes:
             (1) Descriptions vary tremendously from listing to listing, the exact index occurence of items often change,
-                and items are sometimes not listed. However the overall item structure does not change and is predictable. 
+                and items are sometimes not listed. However the overall item structure is predictable. 
                 (E.g., interior description is always after exterior description, transfer is after transmission, etc.)
 
             (2) 'Interior Description' typically indicates end of core listing items, and any remaining
@@ -123,32 +172,17 @@ class Parser():
                           'light', 'silver', 'white', 'gray', 'beige', 'brown', 'blue', 'red', 'tan']
 
         interior_keywords = ['cloth', 'vinyl', 'upholstery', 'interior', 'fabric', 'leather']
-        # misc. idx; indicates end of 'core' items in description
-        j = -1
+
         # enumerate items
-        for i, s in enumerate(listing_details):
+        for s in listing_details:
             # if any(keyword in s for keyword in mileage_keywords) & (pd.isna(miles)):
             #     miles = s.split(' ')[0]
-            if ('miles' in s) & (pd.isna(miles)):
-                split = s.split(' ')
-                split = [substring.strip(' ') for substring in split]
-                idx = [idx for idx, substring in enumerate(split) if 'miles' in substring][0]
-                if (len(split) > 3):
-                    if 'k' in split[idx-1]:
-                        miles = split[idx-1].strip('(~')
-                    elif 'k' in split[idx-2]:
-                        miles = split[idx-2].strip('(~')
-                    elif (len(split[idx-1]) < 8):
-                        miles = split[idx-1]
-                else:
-                     miles = split[idx-1].strip('(~')
+            if any(keyword in s for keyword in mileage_keywords) & (pd.isna(miles)):
+                miles = self.parse_mileage(s)
             elif any(keyword in s for keyword in engine_keywords) & (pd.isna(engine)):
                 engine = s
             elif any(keyword in s for keyword in transmission_keywords) & (pd.isna(trans)):
-                if 'automatic' in s:
-                    trans = 'automatic'
-                else:
-                    trans = 'manual'
+                trans = self.parse_transmission(s)
             elif any(keyword in s for keyword in paint_keywords) & (pd.isna(paint)):
                 no_paint_keywords = sum([1 for keyword in paint_keywords if keyword in s])
                 no_interior_keywords = sum([1 for keyword in interior_keywords if keyword in s])
@@ -159,13 +193,12 @@ class Parser():
                     paint = s
             elif any(keyword in s for keyword in interior_keywords) & (pd.isna(interior)):
                 interior = s
-                j = i
 
-        misc = listing_details[j+1:]
+        misc = listing_details
         return miles, engine, trans, paint, interior, misc
     
     
-    def parse(self, page_source):
+    def parse_page(self, page_source):
         """ Parses and retrieves auction and vehicle information from a listing page
         
         Parameters

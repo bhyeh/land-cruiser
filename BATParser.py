@@ -124,6 +124,26 @@ class Parser():
             trans = np.nan
         return trans
 
+    def parse_exterior(self, string):
+        """ Parses exterior description
+
+        Parameters
+        ----------
+
+        Returns 
+        -------
+        
+        """
+
+        # no_paint_keywords = sum([1 for keyword in paint_keywords if keyword in s])
+        # no_interior_keywords = sum([1 for keyword in interior_keywords if keyword in s])
+        # # catch case where 'over' keyword misparsing paint description
+        # if ('tank' in s or 'tooth' in s or 'over' in s or 'tone' in s or 'light' in s) & (no_paint_keywords == 1):
+        #     pass
+        # elif (no_paint_keywords >= no_interior_keywords):
+        #     paint = s
+
+        pass
     
     def parse_vehicle(self, listing_details):
         """ Parses 'Listing Details' section of listing page
@@ -213,7 +233,7 @@ class Parser():
         # parse auction meta details
         auction_details = soup.find('div', {'class' : 'listing-available-info'})
         auction_stats = soup.find('div', {'id': 'listing-bid-container'})
-        auction_essentials = soup.find('div', class_='essentials')
+        auction_essentials = soup.find('div', {'class' : 'essentials'})
         price, sell_date, seller_location, no_comments, no_views, no_watchers, no_bids = self.parse_auction(auction_details,auction_stats, auction_essentials)
         
         # parse listing title

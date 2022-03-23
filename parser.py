@@ -127,8 +127,18 @@ class BATParser():
         j = -1
         # enumerate items
         for i, s in enumerate(listing_details):
-            if any(keyword in s for keyword in mileage_keywords) & (pd.isna(miles)):
-                miles = s.split(' ')[0]
+            # if any(keyword in s for keyword in mileage_keywords) & (pd.isna(miles)):
+            #     miles = s.split(' ')[0]
+            if ('miles' in s) & (pd.isna(miles)):
+                split = s.split(' ')
+                idx = [idx for idx, substring in enumerate(s) if 'miles' in substring]
+                if (len(split) > 2):
+                    if 'k' in split[idx-1]:
+                        miles = split[idx-1].strip('(~')
+                    elif 'k' in split[idx-2]:
+                        miles = split[idx-2].strip('(~')
+                else:
+                     miles = split[idx-1].strip('(~')
             elif any(keyword in s for keyword in engine_keywords) & (pd.isna(engine)):
                 engine = s
             elif any(keyword in s for keyword in transmission_keywords) & (pd.isna(trans)):

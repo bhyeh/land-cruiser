@@ -175,8 +175,6 @@ class Parser():
 
         # enumerate items
         for s in listing_details:
-            # if any(keyword in s for keyword in mileage_keywords) & (pd.isna(miles)):
-            #     miles = s.split(' ')[0]
             if any(keyword in s for keyword in mileage_keywords) & (pd.isna(miles)):
                 miles = self.parse_mileage(s)
             elif any(keyword in s for keyword in engine_keywords) & (pd.isna(engine)):

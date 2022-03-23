@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 
-class BATParser():
+class Parser():
     """ A parser for 60 Series Toyota Land Cruiser listings on BringATrailer.com (BAT)
     
     Methods
@@ -117,7 +117,7 @@ class BATParser():
         listing_details = [spec.lower() for spec in listing_details]
         # keyword occurence to identify details
         mileage_keywords = ['miles', 'shown']
-        engine_keywords = ['-liter', 'inline', 'v6', 'v8', 'diesel', 'straight']
+        engine_keywords = ['-liter', 'inline', 'v8', 'diesel', 'straight']
         transmission_keywords = ['manual', 'automatic', 'transmis', 'gear', 'box'] 
         paint_keywords = ['paint', 'exterior', 'metallic', 'finish', 'tone', 'wrap', 'over', 'decal',
                           'light', 'silver', 'white', 'gray', 'beige', 'brown', 'blue', 'red', 'tan']
@@ -131,12 +131,15 @@ class BATParser():
             #     miles = s.split(' ')[0]
             if ('miles' in s) & (pd.isna(miles)):
                 split = s.split(' ')
-                idx = [idx for idx, substring in enumerate(s) if 'miles' in substring]
-                if (len(split) > 2):
+                split = [substring.strip(' ') for substring in split]
+                idx = [idx for idx, substring in enumerate(split) if 'miles' in substring][0]
+                if (len(split) > 3):
                     if 'k' in split[idx-1]:
                         miles = split[idx-1].strip('(~')
                     elif 'k' in split[idx-2]:
                         miles = split[idx-2].strip('(~')
+                    elif (len(split[idx-1]) < 8):
+                        miles = split[idx-1]
                 else:
                      miles = split[idx-1].strip('(~')
             elif any(keyword in s for keyword in engine_keywords) & (pd.isna(engine)):

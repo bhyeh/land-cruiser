@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-
 from bs4 import BeautifulSoup
 import numpy as np
 import pandas as pd
@@ -17,7 +13,7 @@ class Parser():
     
     """
 
-    def parse_auction(self, auction_details, auction_stats, auction_essentials):
+    def parse_auction(self, auction_meta_details):
         """ Parses the auction meta details
 
         Returns auction closing price, selling date, seller location, number of comments, watchers, and bids
@@ -31,6 +27,7 @@ class Parser():
         price, sell_date, seller_location, no_comments, no_views, no_watchers, no_bids : str
         """
 
+        auction_details, auction_stats, auction_essentials = auction_meta_details
         # auction details
         price = auction_details.find('span', {'class' : 'info-value noborder-tiny'}).strong.text.split('$')[-1]
         sell_date = auction_details.find('span', {'class': 'date'}).text.split(' ')[-1]
@@ -39,12 +36,42 @@ class Parser():
         # auction stats
         no_views, no_watchers = tuple([stat.text.split(' ')[0] for stat in auction_stats.find('td', {'class': 'listing-stats-views'}).find_all('span')])
         no_bids = auction_stats.find('td', {'class': 'listing-stats-value number-bids-value'}).text
+        # reserve met
+        reserve_met = True
+        bid_result = auction_stats.find('td', {'class' : 'listing-stats-value'}).text.lower()
+        bid_result_split = bid_result.split(' ')
+        bid_result_split = [substring.strip(' (),') for substring in bid_result_split]
+        bid_result = ' '.join(bid_result_split)
+        if 'reserve not met' in bid_result:
+            reserve_met = False
 
         # location
         seller_location = auction_essentials.find_all('a', href=True)[2].text.lower()
         
-        return price, sell_date, seller_location, no_comments, no_views, no_watchers, no_bids
-    
+        return price, sell_date, reserve_met, seller_location, no_comments, no_views, no_watchers, no_bids
+
+    def parse_year(self, title_str):
+        """ Parses year
+        
+        Parameters
+        ----------
+        title_str : str
+
+        Returns
+        -------
+        year_str: str
+
+        """
+
+        year_str = np.nan
+        # Format 1: '198x'
+        if '198' in title_str:
+            idx = title_str.find('198')
+            year_str = title_str[idx:idx+4]
+        elif '199' in title_str:
+            idx = title_str.find('199')
+            year_str = title_str[idx:idx+4]
+        return year_str
     
     def parse_title(self, listing_title):
         """ Parses listing title and returns the year and series code
@@ -64,16 +91,15 @@ class Parser():
         """
 
         # initialize both year and body code as null
-        year = code = np.nan
+        code = np.nan
         # lowercase title
         listing_title = listing_title.lower()
         # parse year from title
-        year_idx = listing_title.find('19')
-        year = listing_title[year_idx:year_idx+4]
+        year_str = self.parse_year(listing_title)
         # parse body code
         code_idx = listing_title.find('j') - 1
         code = listing_title[code_idx:code_idx+4]
-        return year, code
+        return year_str, code
 
     def parse_mileage(self, string):
         """ Parses indicated mileage
@@ -116,12 +142,11 @@ class Parser():
         
         """
 
+        trans = np.nan
         if 'automatic' in string:
             trans = 'automatic'
         elif 'manual' in string:
             trans = 'manual'
-        else:
-            trans = np.nan
         return trans
 
     def parse_exterior(self, string):
@@ -170,9 +195,6 @@ class Parser():
                 and items are sometimes not listed. However the overall item structure is predictable. 
                 (E.g., interior description is always after exterior description, transfer is after transmission, etc.)
 
-            (2) 'Interior Description' typically indicates end of core listing items, and any remaining
-                items that follow are misc. (have even more unpredictable structure, but may offer interesting insight later)
-
         Returns
         -------
         miles, engine, trans, paint, interior: str
@@ -188,12 +210,12 @@ class Parser():
         mileage_keywords = ['miles', 'shown']
         engine_keywords = ['-liter', 'inline', 'v8', 'diesel', 'straight']
         transmission_keywords = ['manual', 'automatic', 'transmis', 'gear', 'box'] 
-        paint_keywords = ['paint', 'exterior', 'metallic', 'finish', 'tone', 'wrap', 'over', 'decal',
+        paint_keywords = ['paint', 'exterior', 'metallic', 'finish', 'tone', 'wrap', 'over', 'decal', 
                           'light', 'silver', 'white', 'gray', 'beige', 'brown', 'blue', 'red', 'tan']
 
         interior_keywords = ['cloth', 'vinyl', 'upholstery', 'interior', 'fabric', 'leather']
 
-        # enumerate items
+        # loop items
         for s in listing_details:
             if any(keyword in s for keyword in mileage_keywords) & (pd.isna(miles)):
                 miles = self.parse_mileage(s)
@@ -212,7 +234,7 @@ class Parser():
             elif any(keyword in s for keyword in interior_keywords) & (pd.isna(interior)):
                 interior = s
 
-        misc = listing_details
+        misc = listing_details[1:]
         return miles, engine, trans, paint, interior, misc
     
     
@@ -234,7 +256,8 @@ class Parser():
         auction_details = soup.find('div', {'class' : 'listing-available-info'})
         auction_stats = soup.find('div', {'id': 'listing-bid-container'})
         auction_essentials = soup.find('div', {'class' : 'essentials'})
-        price, sell_date, seller_location, no_comments, no_views, no_watchers, no_bids = self.parse_auction(auction_details,auction_stats, auction_essentials)
+        auction_meta_details = (auction_details, auction_stats, auction_essentials)
+        price, sell_date, reserve_met, seller_location, no_comments, no_views, no_watchers, no_bids = self.parse_auction(auction_meta_details)
         
         # parse listing title
         listing_title = soup.find('h1', class_='post-title listing-post-title').text
@@ -246,7 +269,7 @@ class Parser():
         miles, engine, trans, exterior_paint, interior, misc = self.parse_vehicle(listing_specs)
         
         # scraped information
-        scraped_page = [listing_title, price, sell_date, no_views, no_watchers, no_comments, no_bids, 
+        scraped_page = [listing_title, price, sell_date, reserve_met, no_views, no_watchers, no_comments, no_bids, 
                         seller_location, year, code, miles, engine, trans, exterior_paint, interior, misc]
         return scraped_page
 

@@ -1,7 +1,29 @@
+import numpy as np
+import pandas as pd
+
 class Clean():
     """
     
     """
+
+    def string_to_int(self, str_num):
+        """ Converts string number representation to integer
+
+        Use for price, number of views, watchers, comments, and bids
+
+        Parameters
+        ----------
+        str_num: str
+
+        Returns
+        -------
+        int_num: int
+
+        """
+
+        str_num = str_num.replace(',', '')
+        int_num = int(str_num)
+        return int_num
     
     def transform_miles(self, str_miles):
         """ Parses and transforms 'mileage' to int
@@ -28,21 +50,17 @@ class Clean():
 
         return int_miles
 
-    def string_to_int(self, str_num):
-        """ Converts string number representation to integer
-
-        Use for price, number of views, watchers, comments, and bids
+    def stem_exterior(self, exterior_description):
+        """
 
         Parameters
-        ----------
-        str_num: str
+        ---------- 
 
         Returns
         -------
-        int_num: int
 
         """
 
-        str_num = str_num.replace(',', '')
-        int_num = int(str_num)
-        return int_num
+        # Format 1: ''
+
+        pass

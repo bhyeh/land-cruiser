@@ -10,9 +10,3 @@ I absolutely love classic 60 series Toyota Land Cruisers. They're boxy, rough lo
 Though even as an onlooker, from my time window-shopping I've actually gained a sense of what can attract higher bids for a Land Cruiser. For example, I've noticed West Coast cruisers are typically more valuable than East Coast as they've gone their lives without salted roads. A manual transmission seems to gather more interest as it is on any car enthusiasts dream check-list, and low mileage will especially grab a LC fanatic's attention – just look at this [1,000 mile '94 80 series](https://bringatrailer.com/listing/1994-toyota-land-cruiser-fj80-24/) that sold for $136,000 with _2021 money_ (Yes, someone actually paid that much for a 27-year old SUV).
 
 To that extent, I wanted to put my intuitions to test and saw the opportunity for a rich data analysis project that would be both fun and interesting to me. 
-
-# Data Collection
-
-
-# Remarks
-

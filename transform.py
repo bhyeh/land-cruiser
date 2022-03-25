@@ -50,7 +50,40 @@ class Transform():
 
         return int_miles
 
-    def transform_engine(self, df: pd.DataFrame):
+    def parse_60series(self, str_engine):
+        """
+        """
+        
+        if '3.4' in str_engine:
+            engine = '3B'
+        elif '4.2' in str_engine:
+            engine = '2F'
+        elif '4.0' in str_engine:
+            engine = '2H'
+
+        return engine
+
+    def parse_61series(self, str_engine):
+        """
+        """
+        
+        if '3.4' in str_engine:
+            engine = '3B'
+        elif '4.0' in str_engine:
+            engine = '12H-T'
+
+        return engine
+
+    def parse_62series(self, str_engine):
+        """
+        """
+
+        if '4.0' in str_engine:
+            engine = '3F-E'
+
+        return engine
+
+    def transform_engine(self, str_engine):
         """ Normalizes engine description
         
         60

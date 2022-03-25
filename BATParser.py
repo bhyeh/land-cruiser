@@ -37,18 +37,18 @@ class Parser():
         no_views, no_watchers = tuple([stat.text.split(' ')[0] for stat in auction_stats.find('td', {'class': 'listing-stats-views'}).find_all('span')])
         no_bids = auction_stats.find('td', {'class': 'listing-stats-value number-bids-value'}).text
         # reserve met
-        sold = '1'
+        auction_result = 'sold'
         bid_result = auction_stats.find('td', {'class' : 'listing-stats-value'}).text.lower()
         bid_result_split = bid_result.split(' ')
         bid_result_split = [substring.strip(' (),') for substring in bid_result_split]
         bid_result = ' '.join(bid_result_split)
         if 'reserve not met' in bid_result:
-            sold = '0'
+            auction_result = 'reserve not met'
 
         # selling location
         seller_location = auction_essentials.find_all('a', href=True)[2].text.lower()
         
-        return price, auction_date, sold, seller_location, no_comments, no_views, no_watchers, no_bids
+        return price, auction_date, auction_result, seller_location, no_comments, no_views, no_watchers, no_bids
 
     def parse_year(self, title_str):
         """ Parses year
@@ -208,7 +208,7 @@ class Parser():
         # initialize all details as null
         miles = engine = trans = paint = interior = np.nan
         # lower case details
-        listing_details = [spec.lower() for spec in listing_details]
+        listing_details = [spec.lower().strip(' ') for spec in listing_details]
         # keyword occurence to identify details
         mileage_keywords = ['miles', 'shown']
         engine_keywords = ['3.4', '4.0', '4.2', '-liter', 'inline', 'v8', 'diesel', 'straight', 'cylinder']
@@ -269,7 +269,7 @@ class Parser():
         year, code = self.parse_title(listing_title)
         
         # listing details
-        listing_details = soup.find('div', class_='essentials')
+        listing_details = soup.find('div', {'class' : 'essentials'} )
         listing_specs = [spec.text for spec in listing_details.find('ul').find_all('li')]
         # parse listing details
         miles, engine, trans, exterior_paint, interior, misc = self.parse_vehicle(listing_specs)
@@ -277,4 +277,5 @@ class Parser():
         # scraped information
         scraped_page = [listing_title, price, auction_date, sold, no_views, no_watchers, no_comments, no_bids, 
                         seller_location, year, code, miles, engine, trans, exterior_paint, interior, misc]
+                        
         return scraped_page

@@ -1,10 +1,10 @@
 60
-	3B : 3.4-Liter Diesel
-	2F : 4.2-Liter Gasoline 
-	2H : 4.0-Liter Diesel
+	3B : 3.4-Liter Diesel (4 Clyinder)
+	2F : 4.2-Liter Gasoline (6 Cylinder)
+	2H : 4.0-Liter Diesel (6 Cylinder)
 61
-	3B : 3.4-Liter Diesel
-	12H-T : 4.0-Liter Disel
+	3B : 3.4-Liter Diesel (4 Cylinder)
+	12H-T : 4.0-Liter Disel (6 Cylinder)
 62
-	3F-E : 4.0-Liter Gasoline
+	3F-E : 4.0-Liter Gasoline (6 Cylinder)
 	

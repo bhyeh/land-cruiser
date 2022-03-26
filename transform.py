@@ -23,7 +23,9 @@ class Transformer():
 
         """
 
-        pass 
+        datetime = pd.to_datetime(dates, infer_datetime_format= True)
+
+        return datetime
 
     def string_to_int(self, str_num : str) -> int:
         """ Converts string number representation to integer
@@ -44,6 +46,19 @@ class Transformer():
         int_num = int(str_num)
 
         return int_num
+
+    def transform_location(self, location : str) -> str: 
+        """
+        
+        """
+
+        seller_state = location.split(', ')[-1].split(' ')
+        if len(seller_state) > 2:
+            seller_state = ' '.join(seller_state[:2])
+        else:
+            seller_state = seller_state[0]
+
+        return seller_state
     
     def transform_miles(self, str_miles: str) -> int:
         """ Parses and transforms 'mileage' to int
@@ -70,7 +85,7 @@ class Transformer():
 
         return int_miles
 
-    def transform_engine(self, df: pd.DataFrame) -> pd.DataFrame:
+    def transform_engine(self, df: pd.DataFrame) -> pd.Series:
         """ Normalizes engine description
 
         60
@@ -151,6 +166,10 @@ class Transformer():
 
             """
 
+            # Correct listing mistake
+            if '4.2' in str_engine:
+                str_engine = re.sub('4.2', '4.0', str_engine)
+
             # 3F-E : 4.0-Liter
             if '4.0' in str_engine:
                 engine = '3F-E'
@@ -159,17 +178,31 @@ class Transformer():
                 engine = 'Other(Swapped)'
 
             return engine
+        
+        m, _ = df.shape
+        engines = pd.Series(np.full(m, np.nan))
 
         # Subset 60 Series
-        subset_60series = np.nan
+        subset_60series = df[df.series.str.contains('60')].engine
+        engine_60series = subset_60series.apply(parse_60series)
+        idx_60series = engine_60series.index
 
         # Subset 61 Series
-        subset_61series = np.nan
+        subset_61series = df[df.series.str.contains('61')].engine
+        engine_61series = subset_61series.apply(parse_61series)
+        idx_61series = engine_61series.index
 
         # Subset 62 Series
-        subset_62series = np.nan
+        subset_62series = df[df.series.str.contains('62')].engine
+        engine_62series = subset_62series.apply(parse_62series)
+        idx_62series = engine_62series.index
 
-        pass
+        # Fill by index
+        engines.loc[idx_60series] = engine_60series
+        engines.loc[idx_61series] = engine_61series
+        engines.loc[idx_62series] = engine_62series
+
+        return engines
 
     def transform_exterior(self, exterior: pd.Series) -> pd.Series:
         """
@@ -211,11 +244,14 @@ class Transformer():
             -------
 
             """
-            
-            string = re.sub('copper', 'brown', string)
-            string = re.sub('bronze', 'brown', string)
-            string = re.sub('cream', 'tan', string)
-            string = re.sub('creme', 'tan', string)
+
+            substitutes = [('copper', 'brown'),
+                            ('bronze', 'brown'),
+                            ('cream', 'tan'),
+                            ('creme', 'tan')]
+
+            for pattern, replacement in substitutes:
+                string = re.sub(pattern, replacement, string)
 
             return string
 
@@ -247,9 +283,9 @@ class Transformer():
 
             """
             
-            color = [substring for substring in string.split(' ') if is_color(substring)]
-            if len(color):
-                color = color[0]
+            colors = [substring for substring in string.split(' ') if is_color(substring)]
+            if len(colors):
+                color = colors[0]
             else:
                 color = np.nan
 
@@ -273,4 +309,24 @@ class Transformer():
 
         """
 
-        pass
+        transformed_df = df.copy()
+
+        # Format datetime
+        transformed_df['closing_date'] = self.format_date(transformed_df.closing_date)
+        # Transform string integers to integers
+        transformed_df['price'] = transformed_df.price.apply(self.string_to_int)
+        transformed_df['no_views'] = transformed_df.no_views.apply(self.string_to_int)
+        transformed_df['no_watchers'] = transformed_df.no_watchers.apply(self.string_to_int)
+        # Transform seller location to seller state
+        transformed_df['seller_state'] = transformed_df.seller_state.apply(self.transform_location)
+        # Transform string mileage to integer mileage
+        transformed_df['miles'] = transformed_df.miles.apply(self.transform_miles)
+        # Transform exterior description
+        transformed_df['exterior'] = self.transform_exterior(transformed_df.exterior)
+        # Transform engine description
+        transformed_df['engine'] = self.transform_engine(transformed_df)
+
+        # Drop
+        transformed_df = transformed_df.drop(columns = ['interior', 'misc'])
+
+        return transformed_df

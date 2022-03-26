@@ -12,7 +12,6 @@ class Transformer():
         
     """
 
-
     def format_date(self, dates: pd.Series) -> pd.Series :
         """
 
@@ -29,7 +28,7 @@ class Transformer():
     def string_to_int(self, str_num : str) -> int:
         """ Converts string number representation to integer
 
-        Use for transforming price, number of views, watchers, comments, and bids
+        Auxiliary function for transforming price, number of views, watchers, comments, and bids
 
         Parameters
         ----------
@@ -43,6 +42,7 @@ class Transformer():
 
         str_num = str_num.replace(',', '')
         int_num = int(str_num)
+
         return int_num
     
     def transform_miles(self, str_miles: str) -> int:
@@ -72,7 +72,7 @@ class Transformer():
 
     def transform_engine(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Normalizes engine description
-        
+
         60
             3B : 3.4-Liter Diesel
             2F : 4.2-Liter Gasoline 
@@ -82,6 +82,12 @@ class Transformer():
             12H-T : 4.0-Liter Disel
         62
             3F-E : 4.0-Liter Gasoline
+
+        Parameters
+        ----------
+
+        Returns
+        -------
 
         """
 
@@ -165,7 +171,7 @@ class Transformer():
 
         pass
 
-    def stem_exterior(self, exterior_description: pd.Series) -> pd.Series:
+    def transform_exterior(self, exterior: pd.Series) -> pd.Series:
         """
 
         Parameters
@@ -192,6 +198,7 @@ class Transformer():
             split = string.split(' ')
             split = [substring.strip(' -') for substring in split]
             string = ' '.join(split).strip(' ')
+
             return string
 
         def sub_color(string):
@@ -208,7 +215,8 @@ class Transformer():
             string = re.sub('copper', 'brown', string)
             string = re.sub('bronze', 'brown', string)
             string = re.sub('cream', 'tan', string)
-            string = re.sub('creme', 'tan')
+            string = re.sub('creme', 'tan', string)
+
             return string
 
         def is_color(string):
@@ -244,11 +252,17 @@ class Transformer():
                 color = color[0]
             else:
                 color = np.nan
+
             return color
 
-        pass
+        exterior = (exterior.apply(strip)
+                            .apply(sub_color)
+                            .apply(stem_color)
+        )
 
-    def transform(self) -> pd.DataFrame:
+        return exterior
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
 
         Parameters

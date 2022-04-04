@@ -3,6 +3,11 @@ import pandas as pd
 import re
 from colour import Color
 
+
+# TODO 4/4/2022
+#   Expand 'closing_date' to 'closing_year'; 
+# 
+
 class Transformer():
     """ 
     
@@ -52,6 +57,7 @@ class Transformer():
         
         """
 
+        # Spaghetti Code
         seller_state = location.split(', ')[-1].split(' ')
         if len(seller_state) > 2:
             seller_state = ' '.join(seller_state[:2])

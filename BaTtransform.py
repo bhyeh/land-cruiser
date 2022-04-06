@@ -3,11 +3,6 @@ import pandas as pd
 import re
 from colour import Color
 
-
-# TODO 4/4/2022
-#   Expand 'closing_date' to 'closing_year'; 
-# 
-
 class Transformer():
     """ 
     

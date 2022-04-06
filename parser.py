@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+
 import numpy as np
 import pandas as pd
 
@@ -114,9 +115,11 @@ class Parser():
 
         Parameters
         ----------
+        string: str
 
         Returns
         -------
+        miles: str
         
         """
 
@@ -147,9 +150,11 @@ class Parser():
 
         Parameters
         ----------
+        string: str
 
         Returns
         -------
+        trans: str
         
         """
 

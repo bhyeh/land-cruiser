@@ -12,7 +12,7 @@ landcruisers = pd.read_csv('landcruisers-cleaned.csv')
 app = Dash(__name__)
 
 app.layout = html.Div(children=[
-    html.H2(children='BaT Land Cruiser Auction Results', style = {'margin-left' : '5%', 'margin-top' : '5%', 'textAlign' : 'left', 'fontFamily' : 'Helvetica'}),
+    html.H2(children='BaT Land Cruiser Auction Results', style = {'margin-left' : '5%', 'margin-top' : '5%', 'textAlign' : 'left'}),
 
     html.Div(children=[
         html.Label('Body Style'),
@@ -20,7 +20,6 @@ app.layout = html.Div(children=[
             options = [60, 61, 62], 
             value = [60, 61, 62],
             placeholder = 'Select Body Style(s)',
-            # style={'width': "40%"}, 
             multi = True,
             searchable = False,
             id = 'bodystyle-dropdown'
@@ -32,7 +31,6 @@ app.layout = html.Div(children=[
             options = ['Manual', 'Automatic'],
             value = ['Manual', 'Automatic'],
             placeholder = 'Select Transmission Type(s)',
-            # style={'width': "40%"},
             multi = True,
             searchable = False,
             id = 'transmission-dropdown'
@@ -43,19 +41,17 @@ app.layout = html.Div(children=[
         dcc.Dropdown(
             options = sorted([color.capitalize() for color in landcruisers.exterior.unique()]),
             placeholder = 'Select Body Color(s)',
-            # style={'width': "40%"},
             multi = True,
-            searchable = False,
-            id = 'bodycolor-dropdown'
+            searchable = False
         )
-    ], style={'margin-left' : '5%','width' : '20%', 'fontFamily' : 'Helvetica', 'display': 'inline-block'}),
+    ], style={'margin-left' : '5%','width' : '20%', 'display': 'inline-block'}),
 
     dcc.Graph(
         id='scatter-plot',
         figure = {},
-        style = {'margin-left' : '5%'}
+        style = {'margin-left' : '5%', 'margin-right' : '5%'}
     )
-])
+], style = {'fontFamily' : 'Helvetica'})
 
 # App callback
 # ------------------------------------------------------------------------------
@@ -89,14 +85,12 @@ def update_figure(bodystyle, trans):
     fig.update_xaxes(
         dtick = 'M12',
         tick0 = '2017-01-01',
-        tickformat = '%m/%Y', 
-        title_font_family = 'Helvetica'
+        tickformat = '%m/%Y'
     )
 
     fig.update_yaxes(
         range = [0, 140000],
-        tickformat = '$,.2r', 
-        title_font_family = 'Helvetica'
+        tickformat = '$,.2r'
     )
 
     fig.update_layout(
